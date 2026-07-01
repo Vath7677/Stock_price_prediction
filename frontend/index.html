@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Price Prediction GRU</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">SP</div>
+          <div>
+            <p>Deep Learning</p>
+            <h1>Stock GRU</h1>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <a class="nav-link active" href="#predict"><span>⌁</span>Prediction</a>
+          <a class="nav-link" href="#dataset"><span>▦</span>Dataset</a>
+          <a class="nav-link" href="#model"><span>◎</span>GRU Model</a>
+          <a class="nav-link" href="#report"><span>◴</span>Report</a>
+        </nav>
+
+        <section class="status-panel">
+          <p class="section-label">Model Status</p>
+          <div class="status-row"><span class="pulse" id="statusPulse"></span><span id="statusText">Waiting for input</span></div>
+          <div class="mini-stat"><span>Window size</span><strong id="windowSizeStat">90</strong></div>
+          <div class="mini-stat"><span>Last prediction</span><strong id="lastPredictionStat">—</strong></div>
+        </section>
+      </aside>
+
+      <section class="content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Stock Price Forecasting</p>
+            <h2>GRU Prediction Dashboard</h2>
+          </div>
+          <button class="ghost-button" type="button" id="refreshButton">Refresh</button>
+        </header>
+
+        <section class="hero-grid" id="predict">
+          <div class="hero-copy">
+            <p class="section-label">Next close estimate</p>
+          <div class="price-line">
+            <span id="predictedPrice">$0.00</span>
+            <small id="priceChange" class="hidden"></small>
+          </div>
+
+            <p class="hero-text">
+              Forecast generated from recent price movement, normalized close values,
+              and GRU sequence windows.
+            </p>
+
+            <div class="result-summary" id="resultSummary">
+              No prediction yet. Choose a ticker or upload a CSV, then press Run Prediction.
+            </div>
+
+            <div class="action-row">
+              <button class="primary-button" type="button" id="predictButton">Run Prediction</button>
+              <button class="secondary-button" type="button" id="downloadButton" disabled>Download Result</button>
+            </div>
+          </div>
+
+          <div class="chart-panel">
+            <div class="chart-header">
+              <div>
+                <p>Actual vs Predicted</p>
+                <strong id="chartTitle">No data yet</strong>
+              </div>
+              <span class="badge" id="liveBadge">Idle</span>
+            </div>
+
+            <div class="chart-area">
+              <div class="grid-line"></div>
+              <div class="grid-line"></div>
+              <div class="grid-line"></div>
+
+              <div class="chart-empty-state" id="chartEmptyState">
+                Run a prediction to see the chart
+              </div>
+
+              <svg viewBox="0 0 620 260" id="chartSvg" class="hidden">
+                <defs>
+                  <linearGradient id="actualFill" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#2f80ed" stop-opacity="0.3" />
+                    <stop offset="100%" stop-color="#2f80ed" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+
+                <path id="areaPath" class="area" d="" />
+                <path id="actualPath" class="actual-line" d="" />
+                <path id="predictedPath" class="predicted-line" d="" />
+              </svg>
+            </div>
+
+            <div class="legend">
+              <span><i class="dot actual"></i>Actual price</span>
+              <span><i class="dot predicted"></i>Predicted price</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="dashboard-grid">
+          <form class="control-panel" id="predictionForm">
+            <div class="panel-heading">
+              <p class="section-label">Prediction Input</p>
+              <h3>Configure Forecast</h3>
+            </div>
+
+            <label>
+              Stock Symbol
+              <input type="text" id="stockSymbol" placeholder="e.g. AAPL" maxlength="20" />
+            </label>
+
+            <label>
+              Forecast Days
+              <input type="number" id="forecastDays" min="1" max="30" value="7" />
+            </label>
+
+            <label>
+              Sequence Window
+              <input type="range" id="sequenceWindow" min="30" max="120" value="90" />
+              <span class="range-value"><span id="windowValue">90</span> days</span>
+            </label>
+
+            <label>
+              Dataset File
+              <input type="file" id="datasetFile" accept=".csv" />
+            </label>
+
+            <p class="dataset-message" id="datasetMessage">
+              Enter a ticker OR choose a CSV file, then press Run Prediction. A file takes priority if both are set.
+            </p>
+
+            <button class="primary-button full-button" type="button" id="formPredictButton">
+              Run Prediction
+            </button>
+          </form>
+
+          <section class="metrics-panel" id="model">
+            <div class="panel-heading">
+              <p class="section-label">Model Performance</p>
+              <h3>Evaluation Metrics</h3>
+            </div>
+
+            <div class="metric-list">
+              <article class="metric-card"><span>MAE</span><strong id="maeValue">--</strong></article>
+              <article class="metric-card"><span>RMSE</span><strong id="rmseValue">--</strong></article>
+              <article class="metric-card"><span>R² Score</span><strong id="r2Value">--</strong></article>
+              <article class="metric-card"><span>Accuracy Trend</span><strong id="accuracyValue">--</strong></article>
+            </div>
+          </section>
+
+          <section class="table-panel" id="dataset">
+            <div class="panel-heading">
+              <p class="section-label">Recent Predictions</p>
+              <h3>Output Table</h3>
+              <p class="result-note" id="resultNote">
+                Prediction rows will appear here after you run the forecast.
+              </p>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Actual</th>
+                    <th>Predicted</th>
+                    <th>Signal</th>
+                  </tr>
+                </thead>
+                <tbody id="predictionRows">
+                  <tr class="empty-row">
+                    <td colspan="4">No predictions yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="report-panel" id="report">
+            <div class="panel-heading">
+              <p class="section-label">Training Report</p>
+              <h3>GRU Summary</h3>
+            </div>
+
+            <div class="report-list">
+              <div><span>Optimizer</span><strong>Adam</strong></div>
+              <div><span>Epochs</span><strong>50</strong></div>
+              <div><span>Batch Size</span><strong>64</strong></div>
+              <div><span>Target Column</span><strong>Close</strong></div>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
